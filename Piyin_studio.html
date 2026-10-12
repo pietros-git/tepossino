@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Pinyin Studio v10 - Stabile</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-dim: #94a3b8;
+      --border: #334155;
+      --accent: #38bdf8;
+      --accent-dim: rgba(56, 189, 248, 0.15);
+      --danger: #f43f5e;
+      /* Toni Pleco Standard */
+      --tone-1: #f87171;
+      --tone-2: #4ade80;
+      --tone-3: #60a5fa;
+      --tone-4: #c084fc;
+      --tone-5: #94a3b8;
+    }
+    body {
+      margin: 0;
+      padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 16px) 16px;
+      background: var(--bg);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 { font-size: 1.05rem; margin: 0; font-weight: 600; }
+    
+    .header-actions { display: flex; gap: 6px; }
+
+    .input-box {
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    textarea {
+      width: 100%;
+      height: 85px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      border-radius: 10px;
+      padding: 12px;
+      box-sizing: border-box;
+      font-size: 1rem;
+      resize: vertical;
+    }
+
+    .controls-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .speed-selector { display: flex; gap: 5px; align-items: center; }
+    .btn {
+      background: #0f172a;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn.active {
+      background: var(--accent);
+      color: #0f172a;
+      border-color: var(--accent);
+    }
+    .btn-reset {
+      color: var(--danger);
+      border-color: rgba(244, 63, 94, 0.4);
+    }
+    .btn-reset:active { background: rgba(244, 63, 94, 0.15); }
+    .btn-main {
+      background: var(--accent);
+      color: #0f172a;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+    .btn-main:disabled { opacity: 0.5; }
+
+    /* Barra Telemetria */
+    .telemetry-bar {
+      display: none;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 12px;
+      margin-bottom: 14px;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      justify-content: space-between;
+      align-items: center;
+    }
+    .telemetry-bar.active { display: flex; }
+    .badge {
+      background: var(--accent-dim);
+      color: var(--accent);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    /* Struttura Schede */
+    .cards { display: flex; flex-direction: column; gap: 14px; }
+    .card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      border: 1px solid var(--border);
+    }
+    .chinese-sentence {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      align-items: flex-end;
+      line-height: 2.3;
+    }
+    .word-token {
+      display: inline-flex;
+      cursor: pointer;
+      border-radius: 6px;
+      padding: 0 3px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 2px solid transparent;
+      user-select: none;
+    }
+    .word-token:active {
+      background: var(--accent-dim);
+      border-bottom-color: var(--accent);
+    }
+    ruby {
+      font-size: 1.65rem;
+      color: var(--text-main);
+      ruby-position: over;
+      padding: 0 1px;
+    }
+    rt {
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-align: center;
+    }
+    .punctuation {
+      font-size: 1.65rem;
+      color: var(--text-dim);
+      align-self: flex-end;
+      line-height: 1.8;
+    }
+    .t1 { color: var(--tone-1) !important; }
+    .t2 { color: var(--tone-2) !important; }
+    .t3 { color: var(--tone-3) !important; }
+    .t4 { color: var(--tone-4) !important; }
+    .t5 { color: var(--tone-5) !important; }
+
+    .translation {
+      font-size: 0.98rem;
+      color: #cbd5e1;
+      border-top: 1px solid #334155;
+      padding-top: 10px;
+      line-height: 1.4;
+    }
+    .play-btn {
+      align-self: flex-start;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--accent);
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    /* Modal Impostazioni */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      width: 100%;
+      max-width: 450px;
+    }
+    .modal-card label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      margin-top: 12px;
+      margin-bottom: 4px;
+    }
+    .modal-card input, .modal-card select {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 10px;
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Pinyin Studio (v10 Core)</h1>
+    <div class="header-actions">
+      <button class="btn btn-reset" onclick="resetAll()">↺ Reset</button>
+      <button class="btn" onclick="openKeyModal()">⚙️ Configura</button>
+    </div>
+  </header>
+
+  <div class="input-box">
+    <textarea id="raw-chinese" placeholder="Incolla o digita il testo cinese qui..."></textarea>
+    <div class="controls-row">
+      <div class="speed-selector">
+        <button class="btn" onclick="setSpeed(0.5, this)">0.5x</button>
+        <button class="btn active" onclick="setSpeed(0.75, this)">0.75x</button>
+        <button class="btn" onclick="setSpeed(1.0, this)">1.0x</button>
+      </div>
+      <button id="process-btn" class="btn-main" onclick="processText()">Elabora con AI</button>
+    </div>
+  </div>
+
+  <div id="telemetry-box" class="telemetry-bar">
+    <span id="telemetry-summary">Pronto</span>
+  </div>
+
+  <div id="content" class="cards">
+    <div id="status-msg" style="text-align: center; color: var(--text-dim); margin-top: 30px;">
+      Workspace pronto. Inserisci una frase e tocca "Elabora con AI".
+    </div>
+  </div>
+
+  <!-- Finestra Configurazione -->
+  <div id="key-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h3 style="margin-top: 0; font-size: 1.1rem;">Impostazioni OpenRouter</h3>
+      
+      <label for="api-key-input">Chiave API (sk-or-v1-...):</label>
+      <input type="password" id="api-key-input" placeholder="sk-or-v1-..." autocomplete="off">
+
+      <label for="model-preset">Modello Selezionato:</label>
+      <select id="model-preset">
+        <option value="google/gemini-2.5-flash">Google Gemini 2.5 Flash (Super Rapido & Economico)</option>
+        <option value="anthropic/claude-3.5-haiku">Claude 3.5 Haiku (Molto Accurato)</option>
+        <option value="openai/gpt-4o-mini">GPT-4o Mini (Bilanciato)</option>
+        <option value="deepseek/deepseek-chat">DeepSeek V3 (Nativo Cinese)</option>
+      </select>
+
+      <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
+        <button class="btn" onclick="closeKeyModal()">Annulla</button>
+        <button class="btn-main" onclick="saveSettings()">Salva</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentPlaybackRate = 0.75;
+    const DEFAULT_MODEL = "google/gemini-2.5-flash";
+
+    // Storage con isolamento totale errori
+    function getStored(key) {
+      try { return localStorage.getItem(key); } catch (e) { return null; }
+    }
+    function setStored(key, val) {
+      try { localStorage.setItem(key, val); } catch (e) {}
+    }
+
+    function resetAll() {
+      document.getElementById('raw-chinese').value = '';
+      document.getElementById('content').innerHTML = `
+        <div id="status-msg" style="text-align: center; color: var(--text-dim); margin-top: 30px;">
+          Workspace resettato.
+        </div>`;
+      document.getElementById('telemetry-box').classList.remove('active');
+      try {
+        localStorage.removeItem('pinyin_cached_input');
+        localStorage.removeItem('pinyin_cached_output');
+      } catch(e) {}
+    }
+
+    function openKeyModal() {
+      document.getElementById('api-key-input').value = getStored('openrouter_api_key') || '';
+      document.getElementById('model-preset').value = getStored('openrouter_model') || DEFAULT_MODEL;
+      document.getElementById('key-modal').classList.add('active');
+    }
+
+    function closeKeyModal() {
+      document.getElementById('key-modal').classList.remove('active');
+    }
+
+    function saveSettings() {
+      const key = document.getElementById('api-key-input').value.trim();
+      if (key) setStored('openrouter_api_key', key);
+      const mod = document.getElementById('model-preset').value;
+      setStored('openrouter_model', mod);
+      closeKeyModal();
+    }
+
+    function setSpeed(rate, el) {
+      currentPlaybackRate = rate;
+      document.querySelectorAll('.speed-selector .btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function getToneClass(pinyin) {
+      if (!pinyin) return 't5';
+      if (/[āēīōūǖ]/.test(pinyin)) return 't1';
+      if (/[áéíóúǘ]/.test(pinyin)) return 't2';
+      if (/[ǎěǐǒǔǚ]/.test(pinyin)) return 't3';
+      if (/[àèìòùǜ]/.test(pinyin)) return 't4';
+      return 't5';
+    }
+
+    function speak(text) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN';
+      utterance.rate = currentPlaybackRate;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    async function processText() {
+      const text = document.getElementById('raw-chinese').value.trim();
+      if (!text) return;
+
+      const apiKey = getStored('openrouter_api_key');
+      if (!apiKey) {
+        openKeyModal();
+        return;
+      }
+
+      const model = getStored('openrouter_model') || DEFAULT_MODEL;
+      const btn = document.getElementById('process-btn');
+      btn.disabled = true;
+      btn.innerText = "Elaborazione...";
+
+      const prompt = `Analizza questo testo cinese preservando la struttura a FRASI INTERE (non spezzare le parole in frasi separate).
+Regole tassative:
+1. L'array principale JSON contiene UNA voce per ogni FRASE o PERIODO completo.
+2. Per ogni frase fornisci:
+   - "s": la frase completa in cinese.
+   - "m": la traduzione integrale in italiano dell'intera frase.
+   - "words": la sequenza ordinata delle parole (词) e della punteggiatura che compongono la frase. Per ciascuna parola fornisci:
+     * "h": caratteri cinesi della parola (es. "深圳").
+     * "p": pinyin corrispondente con accenti, separando le sillabe con uno spazio (es. "shēn zhèn"). Per la punteggiatura lascia "" vuoto.
+3. Rispondi ESCLUSIVAMENTE con il JSON puro, senza blocchi markdown o testo aggiuntivo.
+
+Esempio:
+[
+  {
+    "s": "我在深圳工作。",
+    "m": "Lavoro a Shenzhen.",
+    "words": [
+      {"h": "我", "p": "wǒ"},
+      {"h": "在", "p": "zài"},
+      {"h": "深圳", "p": "shēn zhèn"},
+      {"h": "工作", "p": "gōng zuò"},
+      {"h": "。", "p": ""}
+    ]
+  }
+]
+
+Testo da analizzare:
+${text}`;
+
+      const startTime = performance.now();
+
+      try {
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": window.location.href,
+            "X-Title": "Pinyin Studio v10"
+          },
+          body: JSON.stringify({
+            model: model,
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.1
+          })
+        });
+
+        const duration = performance.now() - startTime;
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const data = await response.json();
+        let rawContent = data.choices[0].message.content.trim();
+        
+        const start = rawContent.indexOf('[');
+        const end = rawContent.lastIndexOf(']');
+        if (start !== -1 && end !== -1) {
+          rawContent = rawContent.substring(start, end + 1);
+        }
+
+        const parsed = JSON.parse(rawContent);
+        renderOutput(parsed);
+
+        const tBox = document.getElementById('telemetry-box');
+        tBox.classList.add('active');
+        document.getElementById('telemetry-summary').innerHTML = 
+          `Modello: <span class="badge">${model}</span> | Tempo: <span class="badge">${(duration / 1000).toFixed(2)}s</span>`;
+
+      } catch (err) {
+        alert("Errore: " + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Elabora con AI";
+      }
+    }
+
+    function renderOutput(data) {
+      const container = document.getElementById('content');
+      container.innerHTML = '';
+
+      data.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        const sentenceDiv = document.createElement('div');
+        sentenceDiv.className = 'chinese-sentence';
+
+        const words = item.words || [];
+        words.forEach(token => {
+          const hanzi = token.h || '';
+          const pinyin = (token.p || '').trim();
+
+          if (!pinyin || /^[，。！？、“”《》；：…,.!? ]+$/.test(hanzi)) {
+            const punctSpan = document.createElement('span');
+            punctSpan.className = 'punctuation';
+            punctSpan.textContent = hanzi;
+            sentenceDiv.appendChild(punctSpan);
+            return;
+          }
+
+          const wordSpan = document.createElement('span');
+          wordSpan.className = 'word-token';
+          wordSpan.onclick = () => speak(hanzi);
+
+          const syllables = pinyin.split(/\s+/);
+          const chars = Array.from(hanzi);
+
+          if (syllables.length === chars.length) {
+            chars.forEach((c, idx) => {
+              const ruby = document.createElement('ruby');
+              const toneClass = getToneClass(syllables[idx]);
+              ruby.innerHTML = `${c}<rt class="${toneClass}">${syllables[idx]}</rt>`;
+              wordSpan.appendChild(ruby);
+            });
+          } else {
+            const ruby = document.createElement('ruby');
+            const toneClass = getToneClass(pinyin);
+            ruby.innerHTML = `${hanzi}<rt class="${toneClass}">${pinyin}</rt>`;
+            wordSpan.appendChild(ruby);
+          }
+
+          sentenceDiv.appendChild(wordSpan);
+        });
+
+        const trans = document.createElement('div');
+        trans.className = 'translation';
+        trans.textContent = item.m || '';
+
+        const playBtn = document.createElement('button');
+        playBtn.className = 'play-btn';
+        playBtn.innerHTML = '🔊 Ascolta frase';
+        playBtn.onclick = () => speak(item.s || words.map(w => w.h).join(''));
+
+        card.appendChild(sentenceDiv);
+        card.appendChild(trans);
+        card.appendChild(playBtn);
+        container.appendChild(card);
+      });
+    }
+  </script>
+</body>
+</html>
